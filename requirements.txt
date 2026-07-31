@@ -1,0 +1,16 @@
+# FitTrack — FIREFIT gym membership & class booking system
+#
+# Versions pinned to those verified working on 31 July 2026 so the project
+# installs reproducibly from a clean clone.
+#
+# No credentials, keys or accounts are required by anything here. The external
+# service (Nager.Date) is public and keyless.
+
+Flask==3.0.0          # backend REST API. BSD-3-Clause. Returns JSON only.
+requests==2.32.5      # server-side calls to Nager.Date. Apache 2.0.
+
+# --- testing ---
+pytest==9.0.3         # test runner. MIT.
+coverage==7.15.1      # coverage reporting. Apache 2.0.
+                      # run with:  coverage run -m pytest
+                      #            coverage report -m

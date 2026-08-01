@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitTrack — FIREFIT</title>
+<!--
+  Delivered by Flask as a STATIC FILE. Flask never renders a template. Every
+  piece of data on this page arrives via fetch() and is written into the DOM
+  by JavaScript. There is no <form> element anywhere in this file, so no
+  submit can ever reload the page.
+
+  Styling is deliberately minimal What is here is only what the interface needs
+  to be usable: tables that can be read, tabs that show one panel at a time,
+  the expired-member flag, and the holiday advisory panel.
+-->
+<style>
+  body { font-family: system-ui, Arial, sans-serif; margin: 0; padding: 0 16px 24px;
+         line-height: 1.4; }
+  h1 { font-size: 1.2rem; }
+  h2 { font-size: 1rem; margin: 18px 0 8px; }
+  nav button { padding: 6px 14px; margin-right: 4px; cursor: pointer; }
+  nav button.active { font-weight: bold; }
+  section { display: none; }
+  section.active { display: block; }
+  table { border-collapse: collapse; width: 100%; font-size:.9rem;
+          margin-bottom: 6px; }
+  th, td { border: 1px solid #999; padding: 5px 8px; text-align: left; }
+  th { background: #eee; }
+  label { display: inline-block; font-size:.8rem; margin-right: 10px; }
+  input, select { padding: 4px; font: inherit; font-size:.9rem; }
+  fieldset { border: 1px solid #999; margin-bottom: 14px; padding: 10px; }
+  legend { font-weight: bold; font-size:.9rem; }
+ .muted { color: #666; }
+
+  /* Feedback. The advisory is amber and distinct from an error, because the
+     Good Friday class WAS created — it is flagged, not refused. */
+ .msg { padding: 8px; margin: 8px 0; display: none; }
+ .msg.error    { display: block; background: #fdecea; border-left: 5px solid #b3241f; }
+ .msg.success  { display: block; background: #eaf5ea; border-left: 5px solid #2e7d32; }
+ .msg.advisory { display: block; background: #fff6e0; border-left: 5px solid #c77700; }
+ .msg.warning  { display: block; background: #eef2f8; border-left: 5px solid #4a6fa5; }
+ .msg.detail { display: block; font-size:.8rem; color: #555; }
+
+  /* Expired members and cancelled rows are flagged in the table itself. */
+  tr.expired td  { background: #fdecea; }
+  tr.inactive td { color: #777; font-style: italic; }
+  tr.cancelled td, tr.cancelled-booking td { color: #777; text-decoration: line-through; }
+  tr.full td { background: #fdecea; }
+</style>
+</head>
+<body>
+
+<h1>FitTrack — FIREFIT</h1>
+<p class="muted">Membership &amp; class booking · Churchtown and Knocklyon studios</p>
+
+<nav>
+  <button class="active" data-tab="plans">Plans</button>
+  <button data-tab="members">Members</button>
+  <button data-tab="classes">Classes</button>
+  <button data-tab="bookings">Bookings</button>
+</nav>
+
+<!-- ============================== PLANS ============================== -->
+<section id="tab-plans" class="active">
+  <div id="plans-msg" class="msg"></div>
+  <fieldset>
+    <legend id="plan-form-title">Add a plan</legend>
+    <label>Name <input id="plan-name" type="text" placeholder="Unlimited Monthly"></label>
+    <label>Price (EUR) <input id="plan-price" type="number" step="0.01" min="0" size="6"></label>
+    <label>Duration (days) <input id="plan-duration" type="number" min="1" size="4"></label>
+    <label>Description <input id="plan-description" type="text" size="30"></label>
+    <button id="plan-save">Save plan</button>
+    <button id="plan-cancel" style="display:none">Cancel</button>
+  </fieldset>
+  <table>
+    <thead><tr><th>Name</th><th>Price</th><th>Duration</th><th>Description</th>
+      <th>Members</th><th></th></tr></thead>
+    <tbody id="plans-body"></tbody>
+  </table>
+</section>
+
+<!-- ============================= MEMBERS ============================= -->
+<section id="tab-members">
+  <div id="members-msg" class="msg"></div>
+  <fieldset>
+    <legend id="member-form-title">Add a member</legend>
+    <label>First name <input id="member-first" type="text" size="12"></label>
+    <label>Last name <input id="member-last" type="text" size="12"></label>
+    <label>Email <input id="member-email" type="email" size="24"></label>
+    <label>Phone <input id="member-phone" type="text" size="12"></label>
+    <label>Plan <select id="member-plan"></select></label>
+    <label>Start date <input id="member-start" type="date"></label>
+    <label>Active <select id="member-active">
+      <option value="true">Yes</option><option value="false">No</option>
+    </select></label>
+    <button id="member-save">Save member</button>
+    <button id="member-cancel" style="display:none">Cancel</button>
+    <p class="muted" style="font-size:.8rem; margin:8px 0 0">
+      Expiry is calculated by the server from the plan duration and start date,
+      then stored — it does not shift if the plan is edited later.
+    </p>
+  </fieldset>
+  <fieldset>
+    <legend>Filter</legend>
+    <label>Plan <select id="member-filter-plan"><option value="">All plans</option></select></label>
+    <button id="member-reset">Reset</button>
+  </fieldset>
+  <table>
+    <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Plan</th>
+      <th>Start</th><th>Expiry</th><th>Status</th><th></th></tr></thead>
+    <tbody id="members-body"></tbody>
+  </table>
+  <p class="muted" style="font-size:.8rem"><span id="members-count"></span></p>
+</section>
+
+<!-- ============================= CLASSES ============================= -->
+<section id="tab-classes">
+  <div id="classes-msg" class="msg"></div>
+  <!-- The Good Friday advisory renders here, visibly, not just in the JSON. -->
+  <div id="classes-advisory" class="msg"></div>
+  <fieldset>
+    <legend id="class-form-title">Schedule a class</legend>
+    <label>Class <input id="class-name" type="text" size="16"></label>
+    <label>Instructor <input id="class-instructor" type="text" size="14"></label>
+    <label>Date <input id="class-date" type="date"></label>
+    <label>Start <input id="class-start" type="time"></label>
+    <label>End <input id="class-end" type="time"></label>
+    <label>Capacity <input id="class-capacity" type="number" min="1" size="3"></label>
+    <label>Studio <select id="class-room">
+      <option value="Churchtown">Churchtown</option>
+      <option value="Knocklyon">Knocklyon</option>
+    </select></label>
+    <button id="class-save">Save class</button>
+    <button id="class-cancel-edit" style="display:none">Cancel</button>
+    <p class="muted" style="font-size:.8rem; margin:8px 0 0">
+      The public holiday closure calendar is checked on the server before the
+      class is created.
+    </p>
+  </fieldset>
+  <fieldset>
+    <legend>Filter</legend>
+    <label>Date <input id="class-filter-date" type="date"></label>
+    <label>Instructor <input id="class-filter-instructor" type="text" size="14"></label>
+    <label>Show <select id="class-filter-upcoming">
+      <option value="true">Upcoming only</option><option value="">All dates</option>
+    </select></label>
+    <button id="class-reset">Reset</button>
+  </fieldset>
+  <table>
+    <thead><tr><th>Date</th><th>Time</th><th>Class</th><th>Instructor</th>
+      <th>Studio</th><th>Spaces</th><th></th></tr></thead>
+    <tbody id="classes-body"></tbody>
+  </table>
+  <p class="muted" style="font-size:.8rem"><span id="classes-count"></span></p>
+</section>
+
+<!-- ============================ BOOKINGS ============================= -->
+<section id="tab-bookings">
+  <div id="bookings-msg" class="msg"></div>
+  <fieldset>
+    <legend>Book a place</legend>
+    <label>Member <select id="booking-member"></select></label>
+    <label>Class <select id="booking-class"></select></label>
+    <button id="booking-save">Book</button>
+  </fieldset>
+  <fieldset>
+    <legend>Filter</legend>
+    <label>Member <select id="booking-filter-member"><option value="">All members</option></select></label>
+    <label>Status <select id="booking-filter-status">
+      <option value="">All</option><option value="booked">Booked</option>
+      <option value="attended">Attended</option><option value="no_show">No show</option>
+      <option value="cancelled">Cancelled</option>
+    </select></label>
+    <button id="booking-reset">Reset</button>
+  </fieldset>
+  <table>
+    <thead><tr><th>Member</th><th>Class</th><th>Date</th><th>Time</th>
+      <th>Studio</th><th>Status</th><th></th></tr></thead>
+    <tbody id="bookings-body"></tbody>
+  </table>
+  <p class="muted" style="font-size:.8rem"><span id="bookings-count"></span></p>
+</section>
+
+<script src="/js/api.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>

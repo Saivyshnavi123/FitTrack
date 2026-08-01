@@ -1,0 +1,146 @@
+[
+  {
+    "date": "2026-01-01",
+    "localName": "Lá Caille",
+    "name": "New Year's Day",
+    "countryCode": "IE",
+    "fixed": false,
+    "global": true,
+    "counties": null,
+    "launchYear": null,
+    "types": [
+      "Public"
+    ]
+  },
+  {
+    "date": "2026-02-02",
+    "localName": "Lá Fhéile Bríde",
+    "name": "Saint Brigid's Day",
+    "countryCode": "IE",
+    "fixed": false,
+    "global": true,
+    "counties": null,
+    "launchYear": null,
+    "types": [
+      "Public"
+    ]
+  },
+  {
+    "date": "2026-03-17",
+    "localName": "Lá Fhéile Pádraig",
+    "name": "Saint Patrick's Day",
+    "countryCode": "IE",
+    "fixed": false,
+    "global": true,
+    "counties": null,
+    "launchYear": null,
+    "types": [
+      "Public"
+    ]
+  },
+  {
+    "date": "2026-04-03",
+    "localName": "Aoine an Chéasta",
+    "name": "Good Friday",
+    "countryCode": "IE",
+    "fixed": false,
+    "global": true,
+    "counties": null,
+    "launchYear": null,
+    "types": [
+      "Bank",
+      "School"
+    ]
+  },
+  {
+    "date": "2026-04-06",
+    "localName": "Luan Cásca",
+    "name": "Easter Monday",
+    "countryCode": "IE",
+    "fixed": false,
+    "global": true,
+    "counties": null,
+    "launchYear": null,
+    "types": [
+      "Public"
+    ]
+  },
+  {
+    "date": "2026-05-04",
+    "localName": "Lá Bealtaine",
+    "name": "May Day",
+    "countryCode": "IE",
+    "fixed": false,
+    "global": true,
+    "counties": null,
+    "launchYear": null,
+    "types": [
+      "Public"
+    ]
+  },
+  {
+    "date": "2026-06-01",
+    "localName": "Lá Saoire i mí an Mheithimh",
+    "name": "June Holiday",
+    "countryCode": "IE",
+    "fixed": false,
+    "global": true,
+    "counties": null,
+    "launchYear": null,
+    "types": [
+      "Public"
+    ]
+  },
+  {
+    "date": "2026-08-03",
+    "localName": "Lá Saoire i mí Lúnasa",
+    "name": "August Holiday",
+    "countryCode": "IE",
+    "fixed": false,
+    "global": true,
+    "counties": null,
+    "launchYear": null,
+    "types": [
+      "Public"
+    ]
+  },
+  {
+    "date": "2026-10-26",
+    "localName": "Lá Saoire i mí Dheireadh Fómhair",
+    "name": "October Holiday",
+    "countryCode": "IE",
+    "fixed": false,
+    "global": true,
+    "counties": null,
+    "launchYear": null,
+    "types": [
+      "Public"
+    ]
+  },
+  {
+    "date": "2026-12-25",
+    "localName": "Lá Nollag",
+    "name": "Christmas Day",
+    "countryCode": "IE",
+    "fixed": false,
+    "global": true,
+    "counties": null,
+    "launchYear": null,
+    "types": [
+      "Public"
+    ]
+  },
+  {
+    "date": "2026-12-26",
+    "localName": "Lá Fhéile Stiofáin",
+    "name": "St. Stephen's Day",
+    "countryCode": "IE",
+    "fixed": false,
+    "global": true,
+    "counties": null,
+    "launchYear": null,
+    "types": [
+      "Public"
+    ]
+  }
+]

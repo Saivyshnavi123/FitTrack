@@ -505,6 +505,135 @@ on('class-reset', 'click', () => {
   Classes.load();
 });
 
+/* ============================== bookings ============================== */
+
+const Bookings = {
+  async loadOptions() {
+    const [members, classes] = await Promise.all([
+      API.get('/api/members'),
+      API.get('/api/classes?include_cancelled=true'),
+    ]);
+
+    const memberOptions = members.map(m =>
+      `<option value="${m.id}">${esc(m.last_name)}, ${esc(m.first_name)}` +
+      ` — ${esc(m.plan_name)} (${esc(m.status)})</option>`).join('');
+    document.getElementById('booking-member').innerHTML =
+      '<option value="">Choose a member…</option>' + memberOptions;
+    document.getElementById('booking-filter-member').innerHTML =
+      '<option value="">All members</option>' + memberOptions;
+
+    document.getElementById('booking-class').innerHTML =
+      '<option value="">Choose a class…</option>' + classes.map(c =>
+        `<option value="${c.id}">${esc(c.class_date)} ${esc(c.start_time)} ` +
+        `${esc(c.name)} — ${esc(c.room)} (${c.spaces_left}/${c.capacity} free` +
+        `${c.is_cancelled ? ', CANCELLED' : ''})</option>`).join('');
+  },
+
+  query() {
+    const params = new URLSearchParams();
+    const member = document.getElementById('booking-filter-member').value;
+    const status = document.getElementById('booking-filter-status').value;
+    if (member) params.set('member_id', member);
+    if (status) params.set('status', status);
+    return '/api/bookings?' + params.toString();
+  },
+
+  async load() {
+    const bookings = await guard('bookings-msg', () => API.get(this.query()));
+    if (!bookings) return;
+
+    renderTable('bookings-body', bookings, [
+      b => `${esc(b.first_name)} ${esc(b.last_name)}`,
+      b => esc(b.class_name),
+      b => esc(b.class_date),
+      b => `${esc(b.start_time)}–${esc(b.end_time)}`,
+      b => esc(b.room),
+      b => esc(b.status.replace('_', ' ')),
+      b => b.status === 'cancelled' ? '' :
+           `<button data-attended="${b.id}">Attended</button> ` +
+           `<button data-noshow="${b.id}">No show</button> ` +
+           `<button data-cancel="${b.id}">Cancel</button>`,
+    ], {
+      empty: 'No bookings match those filters.',
+      count: 'bookings-count', noun: 'booking',
+      rowClass: b => b.status === 'cancelled' ? 'cancelled-booking' : '',
+      actions: {
+        cancel: id => this.cancel(id),
+        attended: id => this.setStatus(id, 'attended'),
+        noshow: id => this.setStatus(id, 'no_show'),
+      },
+    });
+  },
+
+  async save() {
+    clearMessage('bookings-msg');
+    const member = document.getElementById('booking-member').value;
+    const klass = document.getElementById('booking-class').value;
+    if (!member || !klass) {
+      showMessage('bookings-msg', 'Choose a member and a class first.', 'error');
+      return;
+    }
+    // The server's own rule message, so the UI never restates the rules.
+    const booking = await guard('bookings-msg', () =>
+      API.post('/api/bookings', { member_id: member, class_id: klass }));
+    if (!booking) return;
+    showMessage('bookings-msg',
+      `Booked ${booking.first_name} ${booking.last_name} into ` +
+      `${booking.class_name} on ${booking.class_date}. ` +
+      `${booking.spaces_left} place${booking.spaces_left === 1 ? '' : 's'} left.` +
+      (booking.reactivated
+        ? ' (Their earlier cancelled booking was reactivated.)' : ''),
+      'success');
+    await this.refresh();
+  },
+
+  /** Cancelling frees the place; the class list reloads so spaces update. */
+  async cancel(bookingId) {
+    clearMessage('bookings-msg');
+    const booking = await guard('bookings-msg',
+      () => API.del(`/api/bookings/${bookingId}`));
+    if (!booking) return;
+    showMessage('bookings-msg',
+      `Cancelled. ${booking.class_name} now has ${booking.spaces_left} ` +
+      `place${booking.spaces_left === 1 ? '' : 's'} free.`, 'success');
+    await this.refresh();
+  },
+
+  async setStatus(bookingId, status) {
+    clearMessage('bookings-msg');
+    const done = await guard('bookings-msg', () =>
+      API.request('PATCH', `/api/bookings/${bookingId}/status`, { status }));
+    if (done) await this.load();
+  },
+
+  async refresh() {
+    await this.loadOptions();
+    await this.load();
+    Classes.load();                 // spaces-left changed on the Classes tab
+  },
+
+  async init() {
+    await guard('bookings-msg', async () => {
+      await this.loadOptions();
+      await this.load();
+    });
+  },
+};
+
+on('booking-save', 'click', () => Bookings.save());
+on('booking-filter-member', 'change', () => Bookings.load());
+on('booking-filter-status', 'change', () => Bookings.load());
+on('booking-reset', 'click', () => {
+  document.getElementById('booking-filter-member').value = '';
+  document.getElementById('booking-filter-status').value = '';
+  Bookings.load();
+});
+
+/* Members and classes may have changed on another tab. */
+document.querySelector('nav button[data-tab="bookings"]')
+ .addEventListener('click', () => Bookings.loadOptions().catch(() => {}));
+
 Plans.load();
 Members.init();
 Classes.init();
+Bookings.init();
